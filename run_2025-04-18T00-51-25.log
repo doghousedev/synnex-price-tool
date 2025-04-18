@@ -4,3 +4,7 @@ Database: postgres
 Table: synnex_flat_file
 Batch size: 500
 Parsed 1092442 records to data/full-627674.csv
+
+Import complete for table synnex_flat_file:
+  Imported: 1090850
+  Updated: 500
