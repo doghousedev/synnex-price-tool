@@ -8,10 +8,6 @@ node_modules
 /.svelte-kit
 /build
 
-# Large data files
-*.ap
-*.csv
-
 # OS
 .DS_Store
 Thumbs.db

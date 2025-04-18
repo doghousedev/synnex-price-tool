@@ -1,5 +1,0 @@
-Input: data/627674.ap
-Output: data/full-627674.csv
-Database: postgres
-Table: synnex_flat_filecls
-Batch size: 500
