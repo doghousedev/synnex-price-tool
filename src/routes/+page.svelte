@@ -10,21 +10,76 @@
 	let isLoading = false;
 	let errorMessage = '';
 
+	/**
+	 * Format a value as currency with 2 decimal places
+	 * @param value The value to format
+	 * @returns Formatted currency string or 'N/A' if invalid
+	 */
+	function formatCurrency(value: any): string {
+		if (value === null || value === undefined) return 'N/A';
+		
+		try {
+			// Convert to number if it's a string
+			const numValue = typeof value === 'string' ? parseFloat(value) : value;
+			
+			// Check if it's a valid number after conversion
+			if (isNaN(numValue)) return 'N/A';
+			
+			return numValue.toFixed(2);
+		} catch (error) {
+			console.error('Error formatting currency value:', value, error);
+			return 'N/A';
+		}
+	}
+
+	/**
+	 * Format a numeric value
+	 * @param value The value to format
+	 * @returns Formatted number or 0 if invalid
+	 */
+	function formatNumber(value: any): number | string {
+		if (value === null || value === undefined) return 0;
+		
+		try {
+			// Convert to number if it's a string
+			const numValue = typeof value === 'string' ? parseFloat(value) : value;
+			
+			// Check if it's a valid number after conversion
+			if (isNaN(numValue)) return 0;
+			
+			return numValue;
+		} catch (error) {
+			console.error('Error formatting numeric value:', value, error);
+			return 0;
+		}
+	}
+
 	onMount(async () => {
 		try {
+			console.log('Testing database connection...');
 			const response = await fetch('/api/test-connection');
+			
+			// Check if the response is OK (status in the range 200-299)
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			
 			const data = await response.json();
+			console.log('Connection test response:', data);
 			
 			if (data.success) {
 				connectionStatus = 'Connected to database';
 				isConnected = true;
 				totalRows = data.data.total_rows;
+				console.log(`Successfully connected to database. Found ${totalRows} records.`);
 			} else {
 				connectionStatus = `Connection failed: ${data.message}`;
 				isConnected = false;
+				console.error('Connection failed:', data.error);
 			}
 		} catch (error) {
-			connectionStatus = `Error: ${error.message}`;
+			console.error('Error testing database connection:', error);
+			connectionStatus = `Error: ${error instanceof Error ? error.message : String(error)}`;
 			isConnected = false;
 		}
 	});
@@ -40,19 +95,31 @@
 		searchResults = [];
 
 		try {
+			console.log(`Searching for ${searchType}: ${searchTerm}`);
 			const response = await fetch(`/api/search?type=${searchType}&term=${encodeURIComponent(searchTerm)}`);
+			
+			// Check if the response is OK (status in the range 200-299)
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			
 			const data = await response.json();
+			console.log('Search response:', data);
 			
 			if (data.success) {
 				searchResults = data.results;
+				console.log(`Found ${searchResults.length} results for ${searchType} search: ${searchTerm}`);
+				
 				if (searchResults.length === 0) {
 					errorMessage = 'No results found';
 				}
 			} else {
 				errorMessage = data.message || 'Search failed';
+				console.error('Search failed:', data.error);
 			}
 		} catch (error) {
-			errorMessage = `Error: ${error.message}`;
+			console.error('Error during search:', error);
+			errorMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
 		}
 
 		isLoading = false;
@@ -134,12 +201,12 @@
 								{#each searchResults as product}
 									<tr>
 										<td>{product.td_synnex_sku}</td>
-										<td>{product.manufacturer_name}</td>
-										<td>{product.manufacturer_part_no}</td>
-										<td>{product.part_description}</td>
-										<td>${product.unit_cost?.toFixed(2) || 'N/A'}</td>
-										<td>${product.msrp?.toFixed(2) || 'N/A'}</td>
-										<td>{product.qty_on_hand_total || 0}</td>
+										<td>{product.manufacturer_name || 'N/A'}</td>
+										<td>{product.manufacturer_part_no || 'N/A'}</td>
+										<td>{product.part_description || 'N/A'}</td>
+										<td>${formatCurrency(product.unit_cost)}</td>
+										<td>${formatCurrency(product.msrp)}</td>
+										<td>{formatNumber(product.qty_on_hand_total) || 0}</td>
 									</tr>
 								{/each}
 							</tbody>

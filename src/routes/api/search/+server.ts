@@ -19,20 +19,43 @@ export const GET: RequestHandler = async ({ url }) => {
     
     switch (searchType) {
       case 'part':
-        // Use Drizzle ORM to search by part number
-        results = await searchByPartNumber(searchTerm);
-        break;
-      case 'description':
-        // Use Drizzle ORM to search by description
-        results = await searchByDescription(searchTerm);
-        break;
-      case 'sku':
-        // Use Drizzle ORM to search by SKU
-        const product = await getProductBySku(searchTerm);
-        if (product) {
-          results = [product];
+        try {
+          // Use Drizzle ORM to search by part number
+          results = await searchByPartNumber(searchTerm);
+          console.log(`Found ${results.length} results for part number search: ${searchTerm}`);
+        } catch (error) {
+          console.error('Error searching by part number:', error);
+          throw new Error(`Part number search failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         break;
+        
+      case 'description':
+        try {
+          // Use Drizzle ORM to search by description
+          results = await searchByDescription(searchTerm);
+          console.log(`Found ${results.length} results for description search: ${searchTerm}`);
+        } catch (error) {
+          console.error('Error searching by description:', error);
+          throw new Error(`Description search failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        break;
+        
+      case 'sku':
+        try {
+          // Use Drizzle ORM to search by SKU
+          const product = await getProductBySku(searchTerm);
+          if (product) {
+            results = [product];
+            console.log(`Found product for SKU search: ${searchTerm}`);
+          } else {
+            console.log(`No product found for SKU: ${searchTerm}`);
+          }
+        } catch (error) {
+          console.error('Error searching by SKU:', error);
+          throw new Error(`SKU search failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        break;
+        
       default:
         return json({
           success: false,
@@ -48,9 +71,20 @@ export const GET: RequestHandler = async ({ url }) => {
   } catch (error) {
     console.error('Search error:', error);
     
+    // Provide more detailed error information for debugging
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      searchType,
+      searchTerm,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.error('Search error details:', errorDetails);
+    
     return json({
       success: false,
-      message: error instanceof Error ? error.message : 'An unknown error occurred',
+      message: errorDetails.message,
+      error: errorDetails,
       results: []
     }, { status: 500 });
   }
