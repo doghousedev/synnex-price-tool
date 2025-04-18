@@ -77,8 +77,12 @@ function countLines(filePath) {
   });
 }
 
-(async () => {
-  totalLines = await countLines(inputPath);
+export async function parseApToCsv(inputPath, outputPath) {
+  let batch = [];
+  let isFirstBatch = true;
+  let totalRecords = 0;
+  let processedLines = 0;
+  let totalLines = await countLines(inputPath);
   const progressBar = new cliProgress.SingleBar({
     format: 'Processing |{bar}| {percentage}% || {value}/{total} lines',
     barCompleteChar: '\u2588',
@@ -92,7 +96,6 @@ function countLines(filePath) {
     crlfDelay: Infinity
   });
 
-  // Remove old output file if exists
   if (fs.existsSync(outputPath)) {
     fs.unlinkSync(outputPath);
   }
@@ -103,40 +106,53 @@ function countLines(filePath) {
     fs.appendFileSync(outputPath, csv + '\n', 'utf8');
   }
 
-  rl.on('line', (line) => {
-    processedLines++;
-    progressBar.update(processedLines);
-    if (line.trim()) {
-      const values = line.split('~');
-      if (values[1] && values[1].trim() === 'HDR') {
-        // Skip header record
-        return;
-      }
-      const record = {};
-      FIELD_NAMES.forEach((key, idx) => {
-        let value = values[idx] !== undefined ? values[idx].trim() : '';
-        if (NUMERIC_FIELDS.includes(key) && value && isNaN(Number(value))) {
-          value = '';
+  return new Promise((resolve, reject) => {
+    rl.on('line', (line) => {
+      processedLines++;
+      progressBar.update(processedLines);
+      if (line.trim()) {
+        const values = line.split('~');
+        if (values[1] && values[1].trim() === 'HDR') {
+          return;
         }
-        record[key] = value;
-      });
-      batch.push(record);
-      totalRecords++;
-      if (batch.length >= BATCH_SIZE) {
-        writeBatch(batch, isFirstBatch);
-        isFirstBatch = false;
-        batch = [];
+        const record = {};
+        FIELD_NAMES.forEach((key, idx) => {
+          let value = values[idx] !== undefined ? values[idx].trim() : '';
+          if (NUMERIC_FIELDS.includes(key) && value && isNaN(Number(value))) {
+            value = '';
+          }
+          record[key] = value;
+        });
+        batch.push(record);
+        totalRecords++;
+        if (batch.length >= BATCH_SIZE) {
+          writeBatch(batch, isFirstBatch);
+          isFirstBatch = false;
+          batch = [];
+        }
       }
-    }
-  });
+    });
 
-  rl.on('close', () => {
-    if (batch.length > 0) {
-      writeBatch(batch, isFirstBatch);
-    }
-    progressBar.update(totalLines);
-    progressBar.stop();
-    console.log(`Parsed ${totalRecords} records to ${outputPath}`);
+    rl.on('close', () => {
+      if (batch.length > 0) {
+        writeBatch(batch, isFirstBatch);
+      }
+      progressBar.update(totalLines);
+      progressBar.stop();
+      console.log(`Parsed ${totalRecords} records to ${outputPath}`);
+      resolve(totalRecords);
+    });
+    rl.on('error', reject);
   });
-})();
+}
+
+// CLI compatibility
+if (process.argv[1] && process.argv[1].endsWith('parse_ap_to_csv.js')) {
+  const inputPathArg = process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'data', 'test.ap');
+  const outputPathArg = process.argv[3] ? path.resolve(process.argv[3]) : path.join(__dirname, 'data', 'test.csv');
+  parseApToCsv(inputPathArg, outputPathArg).catch(err => {
+    console.error('Error during parsing:', err);
+    process.exit(1);
+  });
+}
 
