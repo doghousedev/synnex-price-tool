@@ -1,0 +1,6 @@
+Input: data/627674.ap
+Output: data/full-627674.csv
+Database: postgres
+Table: synnex_flat_file
+Batch size: 500
+Parsed 1092442 records to data/full-627674.csv

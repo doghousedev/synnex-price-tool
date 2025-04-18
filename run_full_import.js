@@ -65,24 +65,47 @@ const client = process.env.DATABASE_URL
     });
 
 async function importCsvToDb(csvPath, table, batchSize) {
+  // Parameter safety limit (Postgres max parameters per query is 65535, but stay well below)
+  const PARAM_LIMIT = 50000;
+
   // Track record stats
   let totalImported = 0;
   let totalUpdated = 0;
   let columns = null;
   let totalRows = 0;
   const TIMESTAMP_COLUMNS = ['created_at', 'updated_at'];
+  // Add all other date/timestamp fields from your FIELD_NAMES if needed
+  const DATE_COLUMNS = [
+    'created_at', 'updated_at', 'sku_created_date', 'eta_date',
+    'promotion_expiration_date', 'product_street_date'
+  ];
+  function isValidDate(val) {
+    if (!val || typeof val !== 'string') return false;
+    // Accepts YYYY-MM-DD, YYYY-MM-DD HH:MM:SS, ISO, etc.
+    return !isNaN(Date.parse(val));
+  }
 
-  // First, count the number of rows for progress bar
+  // First, count the number of rows for progress bar and get columns
   await new Promise((resolve, reject) => {
     let rowCount = 0;
     Papa.parse(fs.createReadStream(csvPath), {
       header: true,
       skipEmptyLines: true,
-      step: () => { rowCount++; },
+      step: (results) => {
+        rowCount++;
+        if (!columns) columns = Object.keys(results.data);
+      },
       complete: () => { totalRows = rowCount; resolve(); },
       error: reject
     });
   });
+
+  // Enforce parameter limit
+  let maxSafeBatch = Math.floor(PARAM_LIMIT / columns.length);
+  if (batchSize > maxSafeBatch) {
+    console.log(`[WARN] Batch size ${batchSize} is too large for ${columns.length} columns. Reducing to ${maxSafeBatch} to avoid Postgres parameter limit.`);
+    batchSize = maxSafeBatch;
+  }
 
   const totalBatches = Math.ceil(totalRows / batchSize);
   const bar = new cliProgress.SingleBar({
@@ -128,8 +151,13 @@ async function importCsvToDb(csvPath, table, batchSize) {
       const updateSet = updateColumns.map(col => `"${col}" = EXCLUDED."${col}"`).join(', ');
       const values = batch.map(row =>
         columns.map(col => {
+          // Null for empty timestamp columns
           if (TIMESTAMP_COLUMNS.includes(col) && (!row[col] || row[col].trim() === '')) {
             return null;
+          }
+          // Null for invalid date columns
+          if (DATE_COLUMNS.includes(col)) {
+            if (!row[col] || !isValidDate(row[col])) return null;
           }
           return row[col] === '' ? null : row[col];
         })

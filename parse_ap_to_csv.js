@@ -78,18 +78,14 @@ function countLines(filePath) {
 }
 
 export async function parseApToCsv(inputPath, outputPath) {
-  let batch = [];
-  let isFirstBatch = true;
-  let totalRecords = 0;
-  let processedLines = 0;
-  let totalLines = await countLines(inputPath);
-  const progressBar = new cliProgress.SingleBar({
-    format: 'Processing |{bar}| {percentage}% || {value}/{total} lines',
-    barCompleteChar: '\u2588',
+  // Streaming: read, parse, and write each line immediately
+  const totalLines = await countLines(inputPath);
+  const bar = new cliProgress.SingleBar({
+    format: 'Parsing |{bar}| {percentage}% || {value}/{total} lines',
     barIncompleteChar: '-',
     hideCursor: true
   });
-  progressBar.start(totalLines, 0);
+  bar.start(totalLines, 0);
 
   const rl = readline.createInterface({
     input: fs.createReadStream(inputPath),
@@ -109,7 +105,7 @@ export async function parseApToCsv(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
     rl.on('line', (line) => {
       processedLines++;
-      progressBar.update(processedLines);
+      bar.update(processedLines);
       if (line.trim()) {
         const values = line.split('~');
         if (values[1] && values[1].trim() === 'HDR') {
@@ -137,8 +133,8 @@ export async function parseApToCsv(inputPath, outputPath) {
       if (batch.length > 0) {
         writeBatch(batch, isFirstBatch);
       }
-      progressBar.update(totalLines);
-      progressBar.stop();
+      bar.update(totalLines);
+      bar.stop();
       console.log(`Parsed ${totalRecords} records to ${outputPath}`);
       resolve(totalRecords);
     });
