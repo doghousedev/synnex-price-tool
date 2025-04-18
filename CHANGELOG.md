@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] - 2025-04-18
+### Added
+- Implemented Drizzle ORM for type-safe database interactions with the synnex_flat_file table
+- Created database schema definition for the Synnex flat file structure
+- Added API endpoints for testing database connection and searching products
+- Implemented search functionality by part number, description, and SKU
+- Added a user interface for searching and displaying Synnex product data
+
+### Changed
+- Replaced direct SQL queries with Drizzle ORM query builder
+- Updated database connection to use environment variables
+
 ## [1.1.0] - 2025-04-18
 ### Added
 - Fully streaming `.ap` to `.csv` conversion for memory efficiency and scalability, using line-by-line processing.
