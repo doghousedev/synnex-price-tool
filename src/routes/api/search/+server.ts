@@ -5,6 +5,8 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ url }) => {
   const searchType = url.searchParams.get('type') || 'part';
   const searchTerm = url.searchParams.get('term') || '';
+  const orderBy = url.searchParams.get('orderBy') || '';
+  const orderDir = url.searchParams.get('orderDir') === 'desc' ? 'desc' : 'asc';
   
   if (!searchTerm) {
     return json({
@@ -21,7 +23,7 @@ export const GET: RequestHandler = async ({ url }) => {
       case 'part':
         try {
           // Use Drizzle ORM to search by part number
-          results = await searchByPartNumber(searchTerm);
+          results = await searchByPartNumber(searchTerm, orderBy, orderDir);
           console.log(`Found ${results.length} results for part number search: ${searchTerm}`);
         } catch (error) {
           console.error('Error searching by part number:', error);
@@ -32,7 +34,7 @@ export const GET: RequestHandler = async ({ url }) => {
       case 'description':
         try {
           // Use Drizzle ORM to search by description
-          results = await searchByDescription(searchTerm);
+          results = await searchByDescription(searchTerm, orderBy, orderDir);
           console.log(`Found ${results.length} results for description search: ${searchTerm}`);
         } catch (error) {
           console.error('Error searching by description:', error);

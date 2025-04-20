@@ -18,12 +18,15 @@ export type SynnexProduct = typeof synnexFlatFile.$inferSelect;
  * @param partNumber The part number to search for
  * @returns Array of matching products
  */
-export async function searchByPartNumber(partNumber: string) {
-  return db
+export async function searchByPartNumber(partNumber: string, orderBy: string = '', orderDir: 'asc' | 'desc' = 'asc') {
+  let query = db
     .select()
     .from(synnexFlatFile)
-    .where(ilike(synnexFlatFile.manufacturer_part_no, `%${partNumber}%`))
-    .limit(100);
+    .where(ilike(synnexFlatFile.manufacturer_part_no, `%${partNumber}%`));
+  if (orderBy && ['manufacturer_part_no', 'part_description', 'td_synnex_sku'].includes(orderBy)) {
+    query = query.orderBy(orderDir === 'desc' ? sql.raw(`${orderBy} DESC`) : sql.raw(`${orderBy} ASC`));
+  }
+  return query;
 }
 
 /**
@@ -31,12 +34,15 @@ export async function searchByPartNumber(partNumber: string) {
  * @param description The description text to search for
  * @returns Array of matching products
  */
-export async function searchByDescription(description: string) {
-  return db
+export async function searchByDescription(description: string, orderBy: string = '', orderDir: 'asc' | 'desc' = 'asc') {
+  let query = db
     .select()
     .from(synnexFlatFile)
-    .where(ilike(synnexFlatFile.part_description, `%${description}%`))
-    .limit(100);
+    .where(ilike(synnexFlatFile.part_description, `%${description}%`));
+  if (orderBy && ['manufacturer_part_no', 'part_description', 'td_synnex_sku'].includes(orderBy)) {
+    query = query.orderBy(orderDir === 'desc' ? sql.raw(`${orderBy} DESC`) : sql.raw(`${orderBy} ASC`));
+  }
+  return query;
 }
 
 /**

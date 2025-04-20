@@ -6,9 +6,13 @@
 	let totalRows = 0;
 	let searchTerm = '';
 	let searchType = 'part';
+	let orderBy = '';
+	let orderDir: 'asc' | 'desc' = 'asc';
 	let searchResults = [];
 	let isLoading = false;
 	let errorMessage = '';
+	let showConfirmDialog = false;
+	let pendingResults = [];
 
 	/**
 	 * Format a value as currency with 2 decimal places
@@ -85,45 +89,66 @@
 	});
 
 	async function handleSearch() {
-		if (!searchTerm.trim()) {
-			errorMessage = 'Please enter a search term';
-			return;
-		}
-
-		errorMessage = '';
-		isLoading = true;
-		searchResults = [];
-
-		try {
-			console.log(`Searching for ${searchType}: ${searchTerm}`);
-			const response = await fetch(`/api/search?type=${searchType}&term=${encodeURIComponent(searchTerm)}`);
-			
-			// Check if the response is OK (status in the range 200-299)
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
-			}
-			
-			const data = await response.json();
-			console.log('Search response:', data);
-			
-			if (data.success) {
-				searchResults = data.results;
-				console.log(`Found ${searchResults.length} results for ${searchType} search: ${searchTerm}`);
-				
-				if (searchResults.length === 0) {
-					errorMessage = 'No results found';
-				}
-			} else {
-				errorMessage = data.message || 'Search failed';
-				console.error('Search failed:', data.error);
-			}
-		} catch (error) {
-			console.error('Error during search:', error);
-			errorMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
-		}
-
-		isLoading = false;
+	if (!searchTerm.trim()) {
+		errorMessage = 'Please enter a search term';
+		return;
 	}
+
+	errorMessage = '';
+	isLoading = true;
+	searchResults = [];
+
+	try {
+		console.log(`Searching for ${searchType}: ${searchTerm}`);
+		const params = new URLSearchParams({
+			type: searchType,
+			term: searchTerm,
+		});
+		if (orderBy) params.set('orderBy', orderBy);
+		if (orderDir) params.set('orderDir', orderDir);
+		const response = await fetch(`/api/search?${params.toString()}`);
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! Status: ${response.status}`);
+		}
+
+		const data = await response.json();
+		console.log('Search response:', data);
+
+		if (data.success) {
+			if (data.results.length > 250) {
+				pendingResults = data.results;
+				showConfirmDialog = true;
+			} else {
+				searchResults = data.results;
+			}
+			if (data.results.length === 0) {
+				errorMessage = 'No results found';
+			}
+		} else {
+			errorMessage = data.message || 'Search failed';
+			console.error('Search failed:', data.error);
+		}
+	} catch (error) {
+		console.error('Error during search:', error);
+		errorMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
+	}
+
+	isLoading = false;
+}
+
+function confirmShowAll() {
+	searchResults = pendingResults;
+	showConfirmDialog = false;
+	pendingResults = [];
+}
+
+function cancelShowAll() {
+	showConfirmDialog = false;
+	pendingResults = [];
+	// Optionally show a message or keep searchResults empty
+}
+
 </script>
 
 <svelte:head>
@@ -172,6 +197,16 @@
 							placeholder="Enter search term..." 
 							on:keydown={(e) => e.key === 'Enter' && handleSearch()}
 						/>
+						<select bind:value={orderBy}>
+							<option value="">Sort By (default)</option>
+							<option value="manufacturer_part_no">Part Number</option>
+							<option value="part_description">Description</option>
+							<option value="td_synnex_sku">Synnex SKU</option>
+						</select>
+						<select bind:value={orderDir}>
+							<option value="asc">Ascending</option>
+							<option value="desc">Descending</option>
+						</select>
 						<button on:click={handleSearch} disabled={isLoading}>
 							{isLoading ? 'Searching...' : 'Search'}
 						</button>
@@ -182,37 +217,48 @@
 					<p class="error-message">{errorMessage}</p>
 				{/if}
 
-				{#if searchResults.length > 0}
-					<div class="results-container">
-						<h3>Results ({searchResults.length})</h3>
-						<table>
-							<thead>
-								<tr>
-									<th>Synnex SKU</th>
-									<th>Manufacturer</th>
-									<th>Part Number</th>
-									<th>Description</th>
-									<th>Unit Cost</th>
-									<th>MSRP</th>
-									<th>Stock</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each searchResults as product}
-									<tr>
-										<td>{product.td_synnex_sku}</td>
-										<td>{product.manufacturer_name || 'N/A'}</td>
-										<td>{product.manufacturer_part_no || 'N/A'}</td>
-										<td>{product.part_description || 'N/A'}</td>
-										<td>${formatCurrency(product.unit_cost)}</td>
-										<td>${formatCurrency(product.msrp)}</td>
-										<td>{formatNumber(product.qty_on_hand_total) || 0}</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
+				{#if showConfirmDialog}
+				<div class="modal-overlay">
+					<div class="modal">
+						<p>More than 250 results were found. Displaying all records may impact performance. Do you want to proceed and show all {pendingResults.length} results?</p>
+						<div class="modal-actions">
+							<button on:click={confirmShowAll}>Yes, show all</button>
+							<button on:click={cancelShowAll}>Cancel</button>
+						</div>
 					</div>
-				{/if}
+				</div>
+			{/if}
+			{#if searchResults.length > 0}
+				<div class="results-container">
+					<h3>Results ({searchResults.length})</h3>
+					<table>
+						<thead>
+							<tr>
+								<th>Synnex SKU</th>
+								<th>Manufacturer</th>
+								<th>Part Number</th>
+								<th>Description</th>
+								<th>Unit Cost</th>
+								<th>MSRP</th>
+								<th>Stock</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each searchResults as product}
+								<tr>
+									<td>{product.td_synnex_sku}</td>
+									<td>{product.manufacturer_name || 'N/A'}</td>
+									<td>{product.manufacturer_part_no || 'N/A'}</td>
+									<td>{product.part_description || 'N/A'}</td>
+									<td>${formatCurrency(product.unit_cost)}</td>
+									<td>${formatCurrency(product.msrp)}</td>
+									<td>{formatNumber(product.qty_on_hand_total) || 0}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
 			</div>
 		{/if}
 	</section>
