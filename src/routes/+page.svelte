@@ -188,6 +188,10 @@ function cancelShowAll() {
 							<input type="radio" bind:group={searchType} value="sku" />
 							Synnex SKU
 						</label>
+						<label>
+							<input type="radio" bind:group={searchType} value="manufacturer" />
+							Manufacturer
+						</label>
 					</div>
 					
 					<div class="search-input">
@@ -202,6 +206,7 @@ function cancelShowAll() {
 							<option value="manufacturer_part_no">Part Number</option>
 							<option value="part_description">Description</option>
 							<option value="td_synnex_sku">Synnex SKU</option>
+							<option value="manufacturer_name">Manufacturer</option>
 						</select>
 						<select bind:value={orderDir}>
 							<option value="asc">Ascending</option>

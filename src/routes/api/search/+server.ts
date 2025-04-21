@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { searchByPartNumber, searchByDescription, getProductBySku, type SynnexProduct } from '$lib/server/db';
+import { searchByPartNumber, searchByDescription, getProductBySku, searchByManufacturerName, type SynnexProduct } from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -55,6 +55,16 @@ export const GET: RequestHandler = async ({ url }) => {
         } catch (error) {
           console.error('Error searching by SKU:', error);
           throw new Error(`SKU search failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        break;
+
+      case 'manufacturer':
+        try {
+          results = await searchByManufacturerName(searchTerm, orderBy, orderDir);
+          console.log(`Found ${results.length} results for manufacturer search: ${searchTerm}`);
+        } catch (error) {
+          console.error('Error searching by manufacturer:', error);
+          throw new Error(`Manufacturer search failed: ${error instanceof Error ? error.message : String(error)}`);
         }
         break;
         

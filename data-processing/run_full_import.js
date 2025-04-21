@@ -17,7 +17,18 @@ import { parseApToCsv } from './parse_ap_to_csv.js';
 const now = new Date();
 const pad = n => n.toString().padStart(2, '0');
 const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-const logPath = `run_${timestamp}.log`;
+// Support --logDir argument
+const args = process.argv.slice(2);
+function getArg(flag, def) {
+  const idx = args.indexOf(flag);
+  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
+  return def;
+}
+const logDir = getArg('--logDir', '.');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+const logPath = path.join(logDir, `run_${timestamp}.log`);
 const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 const origConsoleLog = console.log;
 const origConsoleError = console.error;

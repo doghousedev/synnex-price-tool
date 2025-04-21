@@ -1,0 +1,11 @@
+Input: data/627674.ap
+Output: data/full-627674.csv
+Database: postgres
+Table: synnex_flat_file
+Batch size: 1000
+Parsed 1091272 records to data/full-627674.csv
+[WARN] Batch size 1000 is too large for 72 columns. Reducing to 694 to avoid Postgres parameter limit.
+
+Import complete for table synnex_flat_file:
+  Imported: 6387
+  Updated: 1083794

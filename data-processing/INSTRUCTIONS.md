@@ -55,10 +55,12 @@ node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --outpu
 
 ```powershell
 pnpm exec node parse_ap_to_csv.js data/627674.ap data/full-627674.csv
-node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --output data/full-627674.csv --db postgres --table synnex_flat_file --batch 500
+node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --output data/full-627674.csv --db postgres --table synnex_flat_file --batch 500 --logDir logs
 ```
 
 Or, run both commands one after another in PowerShell.
+
+- You can use the `--logDir <folder>` option with `run_full_import.js` to specify where log files should be placed. If not provided, logs are saved in the current directory.
 
 ---
 

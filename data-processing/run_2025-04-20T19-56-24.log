@@ -3,4 +3,5 @@ Output: data/full-627674.csv
 Database: postgres
 Table: synnex_flat_file
 Batch size: 500
-[ERROR] Error during import: {}
+Parsed 1091272 records to data/full-627674.csv
+[ERROR] Error during import: {"code":"ECONNREFUSED"}

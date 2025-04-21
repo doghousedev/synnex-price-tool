@@ -14,6 +14,23 @@ export const db = drizzle(queryClient);
 export type SynnexProduct = typeof synnexFlatFile.$inferSelect;
 
 /**
+ * Search products by manufacturer name
+ * @param manufacturerName The manufacturer name to search for
+ * @returns Array of matching products
+ */
+export async function searchByManufacturerName(manufacturerName: string, orderBy: string = '', orderDir: 'asc' | 'desc' = 'asc') {
+  let query = db
+    .select()
+    .from(synnexFlatFile)
+    .where(ilike(synnexFlatFile.manufacturer_name, `%${manufacturerName}%`));
+  if (orderBy && ['manufacturer_part_no', 'part_description', 'td_synnex_sku', 'manufacturer_name'].includes(orderBy)) {
+    query = query.orderBy(orderDir === 'desc' ? sql.raw(`${orderBy} DESC`) : sql.raw(`${orderBy} ASC`));
+  }
+  return query;
+}
+
+
+/**
  * Search products by manufacturer part number
  * @param partNumber The part number to search for
  * @returns Array of matching products

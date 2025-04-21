@@ -146,9 +146,12 @@ export async function parseApToCsv(inputPath, outputPath) {
 if (process.argv[1] && process.argv[1].endsWith('parse_ap_to_csv.js')) {
   const inputPathArg = process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'data', 'test.ap');
   const outputPathArg = process.argv[3] ? path.resolve(process.argv[3]) : path.join(__dirname, 'data', 'test.csv');
-  parseApToCsv(inputPathArg, outputPathArg).catch(err => {
-    console.error('Error during parsing:', err);
-    process.exit(1);
-  });
+  (async () => {
+    try {
+      await parseApToCsv(inputPathArg, outputPathArg);
+    } catch (err) {
+      console.error('Fatal error in parseApToCsv:', err);
+      process.exit(1);
+    }
+  })();
 }
-
