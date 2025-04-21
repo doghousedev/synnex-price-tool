@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- Added `--logDir` option to `run_full_import.js` to allow specifying a directory for log files. Log directory is created automatically if it does not exist.
+- Updated `INSTRUCTIONS.md` to document the new `--logDir` usage with example.
+
+### Fixed
+- Resolved all variable redeclaration lint errors in `run_full_import.js` by consolidating CLI argument parsing.
+- Improved logging robustness and flexibility.
+
+
 ## [1.2.0] - 2025-04-18
 ### Added
 - Implemented Drizzle ORM for type-safe database interactions with the synnex_flat_file table

@@ -30,6 +30,11 @@ if (!fs.existsSync(logDir)) {
 }
 const logPath = path.join(logDir, `run_${timestamp}.log`);
 const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+const inputPath = getArg('--input', path.join('data', 'test.ap'));
+const outputPath = getArg('--output', path.join('data', 'test.csv'));
+const dbName = getArg('--db', process.env.PGDATABASE || 'postgres');
+const tableName = getArg('--table', 'synnex_flat_file');
+const batchSize = parseInt(getArg('--batch', '500'), 10);
 const origConsoleLog = console.log;
 const origConsoleError = console.error;
 console.log = (...args) => {
@@ -42,20 +47,6 @@ console.error = (...args) => {
 };
 
 const { Client } = pkg;
-
-// --- CLI argument parsing ---
-const args = process.argv.slice(2);
-function getArg(flag, def) {
-  const idx = args.indexOf(flag);
-  if (idx !== -1 && args[idx + 1]) return args[idx + 1];
-  return def;
-}
-
-const inputPath = getArg('--input', path.join('data', 'test.ap'));
-const outputPath = getArg('--output', path.join('data', 'test.csv'));
-const dbName = getArg('--db', process.env.PGDATABASE || 'postgres');
-const tableName = getArg('--table', 'synnex_flat_file');
-const batchSize = parseInt(getArg('--batch', '500'), 10);
 
 console.log(`Input: ${inputPath}`);
 console.log(`Output: ${outputPath}`);
