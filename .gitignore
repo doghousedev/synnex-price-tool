@@ -24,4 +24,9 @@ vite.config.ts.timestamp-*
 
 # Data files
 /data/
+/data-processing/data/*
+/data/*
+
+# Log files
+*.log
 
