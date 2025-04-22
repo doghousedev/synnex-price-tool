@@ -26,6 +26,8 @@ vite.config.ts.timestamp-*
 /data/
 /data-processing/data/*
 /data/*
+data-processing/data/627674.ap
+data-processing/data/full-627674.csv
 
 # Log files
 *.log
