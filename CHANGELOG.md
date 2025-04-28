@@ -5,6 +5,9 @@
 - Added `--logDir` option to `run_full_import.js` to allow specifying a directory for log files. Log directory is created automatically if it does not exist.
 - Updated `INSTRUCTIONS.md` to document the new `--logDir` usage with example.
 
+### Changed
+- Removed large data files (`data-processing/data/627674.ap`, `data-processing/data/full-627674.csv`) from git history to comply with GitHub file size limits. Updated `.gitignore` to prevent tracking large data files in the future.
+
 ### Fixed
 - Resolved all variable redeclaration lint errors in `run_full_import.js` by consolidating CLI argument parsing.
 - Improved logging robustness and flexibility.
