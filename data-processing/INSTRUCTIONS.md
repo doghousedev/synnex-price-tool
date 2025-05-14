@@ -5,7 +5,29 @@ This tool allows you to efficiently parse large `.ap` files, convert them to `.c
 
 ---
 
-## 1. Parse `.ap` File to `.csv` (Streaming & Memory-Efficient)
+## 1. Change to the data-processing directory
+
+Before running any parser commands, first make sure you are in the data-processing directory:
+
+```powershell
+cd path\to\synnex-price-tool\data-processing
+```
+
+## 2. All-in-one: Parse and Import in a Single Step
+
+The following command does both parsing and importing in one operation:
+
+```powershell
+node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --output data/full-627674.csv --db postgres --table synnex_flat_file --batch 500 --logDir logs
+```
+
+This is the recommended approach as it handles the complete workflow.
+
+---
+
+## Alternative: Run Steps Separately (if needed)
+
+### 2a. Parse `.ap` File to `.csv` (Streaming & Memory-Efficient)
 
 This command converts your `.ap` file to a `.csv` file using a streaming, line-by-line process (no memory issues, works for huge files):
 
@@ -16,9 +38,7 @@ pnpm exec node parse_ap_to_csv.js data/627674.ap data/full-627674.csv
 - **Output:** `data/full-627674.csv` (ready for DB import)
 - You can change the filenames as needed for other imports.
 
----
-
-## 2. Import `.csv` into Postgres/Supabase (Safe Batching & Validation)
+### 2b. Import `.csv` into Postgres/Supabase (Safe Batching & Validation)
 
 This command streams the `.csv` into your Postgres/Supabase database, with automatic batch sizing, deduplication, update-on-conflict, and robust date validation:
 
@@ -54,9 +74,20 @@ node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --outpu
 ## Typical Workflow Example
 
 ```powershell
-pnpm exec node parse_ap_to_csv.js data/627674.ap data/full-627674.csv
+# First, change to the data-processing directory
+cd path\to\synnex-price-tool\data-processing
+
+# Option 1: Complete process (parsing + import) in a single command
 node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --output data/full-627674.csv --db postgres --table synnex_flat_file --batch 500 --logDir logs
+
+# Option 2: If you want to run the steps separately
+# Step 1: Parse .ap to CSV only
+# pnpm exec node parse_ap_to_csv.js data/627674.ap data/full-627674.csv
+# Step 2: Import CSV to database
+# node --max-old-space-size=4096 run_full_import.js --input data/627674.ap --output data/full-627674.csv --db postgres --table synnex_flat_file --batch 500 --logDir logs
 ```
+
+**Note**: The `run_full_import.js` script automatically performs both the parsing of the .ap file to CSV *and* the database import in one step, so you typically only need to run this single command.
 
 Or, run both commands one after another in PowerShell.
 
